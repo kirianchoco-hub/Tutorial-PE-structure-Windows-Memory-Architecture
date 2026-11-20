@@ -1,0 +1,33 @@
+
+Một PE Loader tùy chỉnh (Custom PE Loader) là công cụ hữu ích trong nhiều
+tình huống khác nhau, bao gồm:
+
+  - Phân tích động (Dynamic Analysis): Cho phép chạy và quan sát file PE
+    trong môi trường được kiểm soát, không phụ thuộc vào cơ chế nạp mặc
+    định của Windows.
+
+  - Phát triển Crypter / Loader: Dùng để giải mã (decrypt) và nạp các file
+    PE đã được mã hóa hoặc đóng gói (packed) vào bộ nhớ mà không cần ghi
+    ra đĩa.
+
+  - Runtime Instrumentation (Đo lường/Can thiệp tại thời điểm chạy): Cho
+    phép chèn mã theo dõi, hook API, hoặc thu thập thông tin về hành vi
+    của chương trình ngay trong quá trình nạp và thực thi.
+
+
+YÊU CẦU KHI XÂY DỰNG CUSTOM PE LOADER
+---------------------------------------
+Để phát triển một PE Loader tùy chỉnh, chương trình loader phải thực hiện
+đầy đủ tất cả các nhiệm vụ chuẩn bị (preparation) và khởi tạo
+(initialization) giống như PE Loader gốc của hệ thống Windows.
+
+Điều này có nghĩa là loader tùy chỉnh cần:
+
+  - Đọc và xử lý Header (Header Processing).
+  - Ánh xạ các Section vào bộ nhớ (Section Mapping).
+  - Phân giải bảng IAT (IAT Resolution).
+  - Thực hiện tái định vị (Relocation) nếu cần.
+  - Chuyển quyền điều khiển đến điểm vào (Execute Entrypoint).
+
+
+trên được hiện thực hóa trong thực tế.
