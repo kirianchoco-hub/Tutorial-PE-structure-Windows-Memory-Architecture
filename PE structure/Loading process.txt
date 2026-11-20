@@ -1,0 +1,80 @@
+
+Định dạng PE (PE File Format) định nghĩa một đặc tả (specification) cho mã
+(code) và dữ liệu (data), cùng với các siêu thông tin (meta-information) mà
+PE Loader yêu cầu để nạp và chuẩn bị file thực thi vào bộ nhớ một cách
+chính xác.
+
+Quy trình nạp file PE được thực hiện bởi PE Loader bao gồm 5 bước chính:
+
+  1. Header Processing (Xử lý Header)
+  2. Section Mapping (Ánh xạ Section)
+  3. IAT Resolution (Phân giải bảng IAT)
+  4. Relocation (Tái định vị)
+  5. Execute Entrypoint (Thực thi điểm vào)
+
+
+1. HEADER PROCESSING (XỬ LÝ HEADER)
+-------------------------------------
+PE Loader bắt đầu bằng việc đọc và kiểm tra phần Header của file. Nó xác
+nhận chữ ký (Signature) "PE\0\0", kiểm tra kiến trúc CPU (Machine), số lượng
+Section (NumberOfSections) và các cờ đặc trưng (Characteristics).
+
+Từ Optional Header, Loader lấy các thông tin quan trọng như:
+  - ImageBase (địa chỉ cơ sở ưu tiên)
+  - SectionAlignment và FileAlignment (quy tắc căn chỉnh)
+  - AddressOfEntryPoint (điểm bắt đầu thực thi)
+  - SizeOfImage (tổng kích thước bộ nhớ cần cấp phát)
+
+Loader dựa vào trường e_lfanew trong DOS Header để tìm đến PE Header.
+
+
+2. SECTION MAPPING (ÁNH XẠ SECTION)
+------------------------------------
+Sau khi xử lý Header, Loader đọc bảng Section Table (nằm ngay sau Optional
+Header). Bảng này chứa các cấu trúc IMAGE_SECTION_HEADER liên tiếp, mỗi cấu
+trúc định nghĩa tên, kích thước và vị trí (PointerToRawData) của từng
+Section (như .text, .data, .rdata).
+
+Loader tiến hành ánh xạ (map) từng Section từ file trên đĩa vào không gian
+bộ nhớ ảo (Virtual Address Space) theo đúng quy tắc căn chỉnh đã định nghĩa
+trong Optional Header (FileAlignment trên đĩa so với SectionAlignment trong
+RAM).
+
+
+3. IAT RESOLUTION (PHÂN GIẢI BẢNG IAT)
+----------------------------------------
+Bảng IAT (Import Address Table) chứa danh sách các hàm API mà file PE cần
+gọi từ các thư viện động bên ngoài (như kernel32.dll, user32.dll).
+
+Trong bước này, PE Loader duyệt qua các cấu trúc Import Directory, tìm tên
+các hàm tương ứng trong file DLL được chỉ định, lấy địa chỉ thực tế của
+chúng trong bộ nhớ và ghi đè (patch) địa chỉ đó vào bảng IAT của tiến trình.
+Sau bước này, khi chương trình gọi hàm API, nó sẽ gọi trực tiếp qua địa chỉ
+đã được phân giải trong IAT.
+
+
+4. RELOCATION (TÁI ĐỊNH VỊ)
+---------------------------
+Nếu Loader không thể nạp file PE vào đúng địa chỉ ImageBase ưu tiên (ví dụ:
+do địa chỉ đó đã bị tiến trình khác chiếm giữ), nó sẽ nạp file vào một địa
+chỉ khác. Khi đó, tất cả các địa chỉ tuyệt đối bên trong file cần được điều
+chỉnh lại cho phù hợp với địa chỉ cơ sở mới.
+
+Quá trình này được gọi là Relocation, sử dụng thông tin trong bảng
+Relocation Directory. Nếu file PE được biên dịch với cờ cho phép tái định
+vị (thường là /DYNAMICBASE), Loader sẽ tính toán độ lệch (delta) giữa
+ImageBase ưu tiên và địa chỉ nạp thực tế, rồi cộng độ lệch này vào các địa
+chỉ cần điều chỉnh.
+
+
+5. EXECUTE ENTRYPOINT (THỰC THI ĐIỂM VÀO)
+------------------------------------------
+Sau khi hoàn tất 4 bước trên, bộ nhớ đã sẵn sàng với mã và dữ liệu được ánh
+xạ đúng, các hàm API đã được phân giải, và các địa chỉ đã được tái định vị
+(nếu cần).
+
+PE Loader cuối cùng sẽ chuyển quyền điều khiển đến địa chỉ được chỉ định
+trong trường AddressOfEntryPoint của Optional Header. Đây là điểm bắt đầu
+thực thi (entrypoint) của chương trình, nơi mã khởi tạo (runtime startup
+code) bắt đầu chạy, sau đó chuyển tiếp đến hàm main() hoặc WinMain() của
+ứng dụng.
