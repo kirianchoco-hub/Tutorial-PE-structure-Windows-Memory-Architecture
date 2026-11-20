@@ -1,0 +1,82 @@
+https://drive.google.com/file/d/1u3fPNRqzYSeD8eEurZ-YAfkHbLXyCHvi/view?usp=sharing
+cre: https://github.com/abhisek/reverse-engineering-and-malware-analysis/blob/master/gitbook/chapters/pe/pe_file_format.md
+
+Dựa trên sơ đồ "PE 101 - a windows executable walkthrough", Header là phần
+nằm ở đầu file thực thi (ví dụ: simple.exe). Nó chứa các chi tiết kỹ thuật
+(technical details) đóng vai trò như tấm bản đồ chỉ dẫn cho hệ điều hành
+biết cách nạp file này vào bộ nhớ. Header được chia làm 2 phần chính:
+DOS Header và PE Header (bao gồm cả Optional Header).
+
+
+1. DOS HEADER
+--------------
+DOS Header nằm ở đầu file và chứa các trường quan trọng sau:
+
+  - e_magic    : Giá trị 5A4D (tương ứng chuỗi "MZ"). Đây là hằng số nhận
+                 diện file DOS (do Mark Zbikowski tạo ra).
+  - e_lfanew   : Trường cực kỳ quan trọng, lưu địa chỉ offset (độ lệch) trỏ
+                 đến vị trí bắt đầu của PE Header thực sự.
+
+Ghi chú: MZ Header (hay DOS_HEADER) là phần mở đầu 16-bit đơn giản của file
+PE. Hệ điều hành sẽ dựa vào e_lfanew để tìm đến PE Header.
+
+
+2. PE HEADER (NT HEADER)
+-------------------------
+Ngay sau DOS Header (được trỏ tới bởi e_lfanew) là PE Header (còn gọi là
+IMAGE_NT_HEADERS). Cấu trúc này gồm các trường sau:
+
+  - Signature          : Giá trị 0x00004550 (chuỗi "PE\0\0"). Đây là chữ ký
+                         xác nhận đây là file Portable Executable chuẩn.
+  - Machine            : Xác định kiến trúc CPU (ví dụ: 0x014c là kiến trúc
+                         Intel 386/x86).
+  - NumberOfSections   : Số lượng section trong file (ví dụ: 3).
+  - Characteristics    : Các cờ đặc trưng của file (ví dụ: 0x0102 biểu thị
+                         file EXE có thể thực thi được).
+
+
+3. OPTIONAL HEADER
+-------------------
+Mặc dù tên là "Optional" nhưng phần này bắt buộc phải có đối với file thực
+thi. Các trường quan trọng bao gồm:
+
+  - Magic                   : 0x010b (đại diện cho định dạng PE32 - 32-bit).
+  - AddressOfEntryPoint     : Địa chỉ (RVA) của điểm bắt đầu thực thi (nơi
+                              chứa mã code đầu tiên chạy khi file được nạp).
+  - ImageBase               : Địa chỉ cơ sở ưu tiên mà file muốn được nạp
+                              vào trong bộ nhớ (ví dụ: 0x00400000).
+  - SectionAlignment        : Quy định căn chỉnh bộ nhớ (trong RAM).
+  - FileAlignment           : Quy định căn chỉnh file (trên đĩa).
+  - MajorSubsystemVersion   : Phiên bản hệ điều hành tối thiểu cần thiết.
+    MinorSubsystemVersion
+  - SizeOfImage             : Tổng kích thước bộ nhớ cần thiết khi nạp vào
+                              RAM.
+  - Subsystem               : Loại giao diện (ví dụ: 2 là GUI - Giao diện
+                              đồ họa).
+
+
+4. QUY TRÌNH NẠP HEADER (LOADING PROCESS)
+------------------------------------------
+Sơ đồ "Loading process" giải thích cách Windows Loader xử lý Header qua 2
+bước:
+
+  Bước 1: Headers (Đọc Header)
+    - Windows OS loader tiến hành đọc (parse) PE Header.
+    - Nó kiểm tra các thông tin trong Optional Header (như ImageBase,
+      SectionAlignment) và các thông tin trong FileHeader.
+    - Hệ điều hành dựa vào e_lfanew để tìm đến PE Header.
+
+  Bước 2: Sections table (Đọc bảng Section)
+    - Sau khi đọc Header, Loader sẽ đọc Sections table (nằm ngay sau
+      Optional Header).
+    - Bảng này chứa một mảng các cấu trúc IMAGE_SECTION_HEADER liên tiếp.
+    - Mỗi cấu trúc định nghĩa tên, kích thước và vị trí (Pointers) của từng
+      section (như .text, .data, .rdata). Đây là cơ sở để Loader thực hiện
+      bước tiếp theo là "Mapping" (Ánh xạ file vào bộ nhớ).
+
+
+TÓM LẠI
+--------
+Header không chứa mã thực thi (code) mà chứa siêu dữ liệu (metadata). Nó
+cho Windows biết file này là gì, cần nạp bao nhiêu bộ nhớ, chạy ở đâu, và
+các Section chứa dữ liệu thực tế nằm ở vị trí nào trong file.
