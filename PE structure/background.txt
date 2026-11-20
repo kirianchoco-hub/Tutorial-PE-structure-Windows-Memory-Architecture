@@ -1,0 +1,29 @@
+Portable Executable (PE) là định dạng tệp được sử dụng cho các tệp thực thi
+(executable), mã đối tượng (object code), thư viện liên kết động (DLL), tệp
+phông chữ (FON) và nhiều loại tệp khác trên các phiên bản Windows 32-bit và
+64-bit.
+
+Về bản chất, PE là một cấu trúc dữ liệu đóng gói toàn bộ thông tin mà trình
+tải của hệ điều hành Windows (Windows OS loader) cần để quản lý mã thực thi
+bên trong. Cấu trúc này không chỉ chứa bản thân mã máy, mà còn bao gồm:
+
+  - Các tham chiếu thư viện động (dynamic library references) phục vụ quá
+    trình liên kết (linking).
+  - Bảng xuất và nhập API (Export/Import tables) — cho phép tệp PE cung cấp
+    hoặc tiêu thụ các hàm từ thư viện bên ngoài.
+  - Dữ liệu quản lý tài nguyên (resource management data) — icon, chuỗi,
+    manifest, v.v.
+  - Dữ liệu lưu trữ cục bộ theo luồng (Thread Local Storage — TLS).
+
+Trên hệ điều hành NT, định dạng PE được áp dụng cho nhiều loại tệp khác nhau,
+bao gồm:
+
+  - .exe  : Tệp thực thi chương trình
+  - .dll  : Thư viện liên kết động
+  - .sys  : Trình điều khiển thiết bị (device driver)
+  - .fon  : Tệp phông chữ
+  - Khác  : Object code, OCX, CPL, v.v.
+
+Nói cách khác, PE chính là "ngôn ngữ chung" mà Windows loader dùng để hiểu và
+nạp bất kỳ tệp thực thi nào vào bộ nhớ — từ một ứng dụng desktop thông thường
+cho đến một driver kernel-mode.
